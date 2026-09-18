@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>CSIRT Incidents Tracker</title>
+  <link rel="stylesheet" href="/static/styles.css?v=0.36.0">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="CSIRT Incidents Tracker home">
+      <span class="brand-mark">CS</span>
+      <span>
+        <strong>CSIRT Incidents Tracker</strong>
+        <small>Incident Management</small>
+      </span>
+    </a>
+    <div class="environment">
+      <i id="env-dot"></i>
+      <span>
+        <strong id="env-status">Starter mode</strong>
+        <small id="health-detail">Checking local runtime</small>
+      </span>
+    </div>
+    <a class="command-center-link" href="/command-center" title="Return to Information Security Command Center">
+      <span aria-hidden="true">◎</span> Command Center
+    </a>
+    <button class="icon-button" id="refresh" type="button" title="Refresh workspace" aria-label="Refresh workspace">↻</button>
+  </header>
+
+  <div class="shell">
+    <nav class="sidebar" aria-label="Workspace views">
+      <button class="nav-item active" data-view="executive" aria-current="true">
+        <span>00</span>Executive Dashboard
+      </button>
+      <button class="nav-item" data-view="analytics">
+        <span>01</span>Analytics
+      </button>
+      <button class="nav-item" data-view="queue">
+        <span>02</span>Work queue
+      </button>
+      <button class="nav-item" data-view="evidence">
+        <span>03</span>Evidence
+      </button>
+      <button class="nav-item" data-view="decisions">
+        <span>04</span>Decisions
+      </button>
+      <button class="nav-item" data-view="integration">
+        <span>05</span>Integration
+      </button>
+      <div id="dashboard-preview-nav"></div>
+      <div class="ownership">
+        <span>AUTHORITATIVE FOR</span>
+        <strong>CSIRT incident lifecycle, triage decisions, automation configs</strong>
+        <span>DOES NOT OWN</span>
+        <strong>Jira issue records (Jira Cloud is authoritative)</strong>
+      </div>
+    </nav>
+
+    <main>
+      <header class="view-heading">
+        <div>
+          <p class="eyebrow">Incident Management / Operations</p>
+          <h1 id="view-title">Executive Dashboard</h1>
+          <p id="view-description">Program-level KPIs, incident trends, risk intelligence, AI snapshot, and leadership alerts — computed live from the CSIRT Jira queue.</p>
+        </div>
+        <span class="status-badge" id="status-badge">STARTER FIXTURE</span>
+      </header>
+
+      <section class="metrics" id="metrics" aria-label="Workspace metrics"></section>
+
+      <!-- 00 Executive Dashboard (Sprint 1) -->
+      <section class="app-view" id="view-panel-executive" data-panel="executive">
+        <section class="exec-kpi-row" id="exec-kpis" aria-label="Executive KPIs">
+          <article class="exec-kpi empty-state">
+            <span>◐</span>
+            <div>
+              <strong>No dashboard data yet</strong>
+              <p>Configure Jira credentials and refresh to populate the Executive Dashboard.</p>
+            </div>
+          </article>
+        </section>
+
+        <div class="analytics-columns">
+          <section class="work-surface">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">INCIDENT TRENDS</p>
+                <h2>Volume trajectory (daily)</h2>
+              </div>
+            </div>
+            <div id="exec-trend-content" class="empty-state">
+              <span>◐</span>
+              <div>
+                <strong>No trend data yet</strong>
+                <p>Populated from the same incident queue used across the tracker.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="work-surface">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">RISK INTELLIGENCE</p>
+                <h2>Incident Types Identified</h2>
+              </div>
+            </div>
+            <div id="exec-risk-content" class="empty-state">
+              <span>◑</span>
+              <div>
+                <strong>No incident type data yet</strong>
+                <p>Incident types will appear here once records are loaded.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="analytics-columns analytics-columns-full">
+          <section class="work-surface">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">SUPPLY CHAIN RISK</p>
+                <h2>Supply Chain incidents identified</h2>
+              </div>
+              <span id="exec-supply-chain-count">0 matched</span>
+            </div>
+            <div id="exec-supply-chain-content" class="empty-state">
+              <span>◇</span>
+              <div>
+                <strong>No Supply Chain incidents identified</strong>
+                <p>Matched case-insensitively against Summary and Description for "Supply Chain".</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="analytics-columns analytics-columns-full">
+          <section class="work-surface">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">LEADERSHIP ATTENTION</p>
+                <h2>Aging / SLA-risk incidents</h2>
+              </div>
+              <span id="exec-alerts-count">0 alerts</span>
+            </div>
+            <div id="exec-alerts-content" class="empty-state">
+              <span>⚠</span>
+              <div>
+                <strong>No leadership alerts</strong>
+                <p>Open incidents aging past threshold or breaching the SLA threshold appear here.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="limitations">
+          <span>LIMITS ON INTERPRETATION</span>
+          <div id="exec-limitations"></div>
+        </section>
+      </section>
+
+      <!-- 02 Work queue -->
+      <section class="app-view hidden" id="view-panel-queue" data-panel="queue">
+        <div class="widgets" id="widgets" aria-label="Analytics dashboard widgets"></div>
+
+        <section class="work-surface" aria-live="polite">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">CURRENT STATE</p>
+              <h2 id="surface-title">No incidents loaded</h2>
+            </div>
+            <span id="generated-at">Not exported</span>
+          </div>
+          <div class="queue-controls" aria-label="Work queue filters">
+            <input
+              id="queue-search"
+              class="queue-search"
+              type="search"
+              placeholder="Search CSIRT incidents by key, summary, assignee, status, tool, or Jira field..."
+              autocomplete="off"
+            />
+            <div class="queue-filter-row" id="queue-filter-row" role="listbox" aria-label="Work queue quick filters"></div>
+          </div>
+          <div id="surface-content" class="empty-state">
+            <span>02</span>
+            <div>
+              <strong>Jira credentials not configured</strong>
+              <p>Copy .env.example to .env and fill in JIRA_EMAIL, JIRA_API_TOKEN, and JIRA_CLOUD_SITE_URL. Then run "CSIRT Tracker: Start Workspace" task.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="limitations">
+          <span>LIMITS ON INTERPRETATION</span>
+          <div id="limitations"></div>
+        </section>
+      </section>
+
+      <!-- 03 Evidence -->
+      <section class="app-view hidden" id="view-panel-evidence" data-panel="evidence">
+        <section class="work-surface" aria-live="polite">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">PROVENANCE</p>
+              <h2>Evidence ledger</h2>
+            </div>
+            <span id="evidence-count">0 records</span>
+          </div>
+          <div id="evidence-content" class="empty-state">
+            <span>03</span>
+            <div>
+              <strong>No evidence loaded</strong>
+              <p>Evidence is derived from imported incidents; load incidents from the Work queue view first.</p>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- 04 Decisions -->
+      <section class="app-view hidden" id="view-panel-decisions" data-panel="decisions">
+        <section class="work-surface" aria-live="polite">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">HUMAN APPROVALS</p>
+              <h2>Triage decisions</h2>
+            </div>
+            <span id="decisions-count">0 recorded</span>
+          </div>
+          <div id="decisions-content" class="empty-state">
+            <span>04</span>
+            <div>
+              <strong>Manual decision workflow not yet implemented</strong>
+              <p>No triage decisions are recorded by this tool today. Every imported incident starts with triageStatus=pending, reflecting import defaults rather than human review. A future release will add POST /api/incidents/{id}/triage to capture actor, rationale, timestamp, and consequences (see TOOL-SPEC.md limitations).</p>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- 05 Integration -->
+      <section class="app-view hidden" id="view-panel-integration" data-panel="integration">
+        <section class="work-surface" aria-live="polite">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">JIRA CLOUD</p>
+              <h2>Connection &amp; sync status</h2>
+            </div>
+            <span id="integration-generated-at">Not exported</span>
+          </div>
+          <div id="integration-content" class="integration-grid"></div>
+        </section>
+      </section>
+
+      <!-- 01 Analytics -->
+      <section class="app-view hidden" id="view-panel-analytics" data-panel="analytics">
+        <section class="work-surface">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">CSIRTS SEEN OVER TIME</p>
+              <h2>Incident volume trend</h2>
+            </div>
+            <div class="analytics-controls">
+              <div class="segmented" id="granularity-toggle" role="tablist" aria-label="Trend granularity">
+                <button type="button" data-granularity="daily" role="tab">Daily</button>
+                <button type="button" data-granularity="weekly" role="tab">Weekly</button>
+                <button type="button" data-granularity="monthly" role="tab" aria-selected="true" class="active">Monthly</button>
+              </div>
+              <div class="date-range">
+                <label for="date-from">From
+                  <input type="date" id="date-from" aria-label="Trend range start date">
+                </label>
+                <label for="date-to">To
+                  <input type="date" id="date-to" aria-label="Trend range end date">
+                </label>
+                <button type="button" id="apply-date-range" class="text-button">Apply</button>
+                <button type="button" id="clear-date-range" class="text-button">Clear</button>
+              </div>
+            </div>
+          </div>
+          <div id="trend-content" class="empty-state">
+            <span>◐</span>
+            <div>
+              <strong>No trend data yet</strong>
+              <p>Configure Jira credentials and load the Work queue to populate the trend chart.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="work-surface">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">SECURITY ANALYTICS</p>
+              <h2>MTTR / MTTD / MTTC / SLA performance</h2>
+            </div>
+          </div>
+          <div id="perf-kpis" class="exec-kpi-row perf-kpi-row">
+            <article class="exec-kpi empty-state">
+              <span>◐</span>
+              <div>
+                <strong>No performance data yet</strong>
+                <p>Configure Jira credentials and load the Work queue to populate MTTR/MTTD/MTTC/SLA.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="work-surface">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">INCIDENT AGING</p>
+              <h2>Open incidents by age since creation</h2>
+            </div>
+            <span id="aging-count">0 open</span>
+          </div>
+          <div id="aging-content" class="empty-state">
+            <span>◓</span>
+            <div>
+              <strong>No aging data yet</strong>
+              <p>Buckets 0-1d/1-3d/3-7d/7d+. Closed and cancelled incidents are excluded — aging measures open-incident risk.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="work-surface">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">LEADERSHIP ALERTS</p>
+              <h2>Open incidents needing attention today</h2>
+            </div>
+            <span id="leadership-alerts-count">0 alert(s)</span>
+          </div>
+          <div id="leadership-alerts-content" class="empty-state">
+            <span>⚠</span>
+            <div>
+              <strong>No leadership alerts yet</strong>
+              <p>Open incidents aged past threshold or breaching the SLA threshold appear here.</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="analytics-columns">
+          <section class="work-surface">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">TOOLS THAT HAVE THE MOST VULNERABILITIES</p>
+                <h2>Ranked by incident count</h2>
+              </div>
+              <span id="tools-count">0 tools</span>
+            </div>
+            <div id="tools-content" class="empty-state">
+              <span>◑</span>
+              <div>
+                <strong>No tool data yet</strong>
+                <p>Ranked from the GSOC Security Solution field on each incident. Untagged incidents are grouped as "Unspecified" and never dropped.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="work-surface">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">AI-RELATED CSIRTS IN OUR ENVIRONMENT</p>
+                <h2>Keyword-matched incidents</h2>
+              </div>
+              <span id="ai-related-count">0 matched</span>
+            </div>
+            <div id="ai-related-content" class="empty-state">
+              <span>◒</span>
+              <div>
+                <strong>No AI-related incidents yet</strong>
+                <p>Matched case-insensitively against Description and Summary using a configurable keyword list (see config/jira_config.yaml).</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="work-surface">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">TOOL EXPOSURE DASHBOARD</p>
+              <h2>Root-cause category rollup</h2>
+            </div>
+            <span id="tool-exposure-count">0 categories</span>
+          </div>
+          <div id="tool-exposure-content" class="empty-state">
+            <span>◔</span>
+            <div>
+              <strong>No category data yet</strong>
+              <p>Ranked by root-cause category (customfield_10187) — the real cross-tool field, since no dedicated technology-category field exists. Incidents without a recorded root cause are grouped as "Unspecified" and never dropped.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="work-surface">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">AI RISK CENTER</p>
+              <h2>AI-related incident exposure and trend</h2>
+            </div>
+            <span id="ai-risk-count">0 / 0 (0%)</span>
+          </div>
+          <div id="ai-risk-kpis" class="exec-kpi-row ai-risk-kpi-row">
+            <article class="exec-kpi empty-state">
+              <span>◕</span>
+              <div>
+                <strong>No AI risk data yet</strong>
+                <p>Configure Jira credentials and load the Work queue to populate AI risk exposure.</p>
+              </div>
+            </article>
+          </div>
+          <div class="analytics-columns">
+            <div>
+              <p class="eyebrow" style="margin-top:20px;">MATCHED AI KEYWORDS</p>
+              <div id="ai-risk-keywords-content" class="empty-state">
+                <span>◒</span>
+                <div>
+                  <strong>No keyword data yet</strong>
+                  <p>Keyword breakdown across all AI-related incidents in the selected range.</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p class="eyebrow" style="margin-top:20px;">AI-RELATED VOLUME TREND</p>
+              <div id="ai-risk-trend-content" class="empty-state">
+                <span>◐</span>
+                <div>
+                  <strong>No trend data yet</strong>
+                  <p>AI-related incident volume over time, same granularity as the trend chart above.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <div id="dashboard-preview-panels"></div>
+    </main>
+  </div>
+
+  <script src="/static/app.js?v=0.36.0"></script>
+</body>
+</html>
